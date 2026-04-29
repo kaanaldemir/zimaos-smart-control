@@ -353,8 +353,12 @@ HTML = """<!doctype html>
     async function refreshDevice(id) {
       try {
         const response = await fetch(apiPath(`/api/device/${id}/state`), { cache: 'no-store' });
+        if (!response.ok) {
+          const errorState = await response.json();
+          throw new Error(errorState.error || response.statusText);
+        }
         const nextState = await response.json();
-        stateById[id] = { ...stateById[id], ...nextState };
+        stateById[id] = { ...stateById[id], ...nextState, error: null };
       } catch (error) {
         stateById[id] = { ...stateById[id], online: false, error: error.message };
       }
