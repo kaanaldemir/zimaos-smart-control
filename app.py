@@ -83,11 +83,12 @@ def wiz_request(method, params=None, timeout=2.0):
 
 def wiz_state():
     result = wiz_request("getPilot").get("result", {})
+    is_on = bool(result.get("state"))
     return {
         **DEVICES["wiz-light"],
         "online": True,
-        "on": bool(result.get("state")),
-        "brightness": result.get("dimming"),
+        "on": is_on,
+        "brightness": result.get("dimming") if is_on else 0,
         "power_w": None,
         "raw": result,
     }
@@ -352,7 +353,8 @@ HTML = """<!doctype html>
     async function refreshDevice(id) {
       try {
         const response = await fetch(apiPath(`/api/device/${id}/state`), { cache: 'no-store' });
-        stateById[id] = await response.json();
+        const nextState = await response.json();
+        stateById[id] = { ...stateById[id], ...nextState };
       } catch (error) {
         stateById[id] = { ...stateById[id], online: false, error: error.message };
       }
