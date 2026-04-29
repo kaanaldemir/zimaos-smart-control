@@ -30,6 +30,7 @@ x-casaos:
     en_us: A tiny local web UI for controlling a WiZ light and Xiaomi Smart Plug 2 without Home Assistant.
   title:
     en_us: Smart Control
+  icon: https://raw.githubusercontent.com/kaanaldemir/zimaos-smart-control/main/assets/icon.png
   port_map: "8099"
   scheme: http
   index: /devices

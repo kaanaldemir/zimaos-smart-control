@@ -21,6 +21,12 @@ Use the compose YAML in this repo as the app package:
 https://raw.githubusercontent.com/kaanaldemir/zimaos-smart-control/main/docker-compose.yml
 ```
 
+App icon:
+
+```text
+https://raw.githubusercontent.com/kaanaldemir/zimaos-smart-control/main/assets/icon.png
+```
+
 Set these environment variables in ZimaOS:
 
 ```sh
