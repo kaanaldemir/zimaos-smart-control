@@ -310,8 +310,7 @@ HTML = """<!doctype html>
       }
       return [
         state,
-        metric('Power Draw', text(device.power_w, ' W')),
-        metric('Energy', text(device.energy_kwh, ' kWh'))
+        metric('Power Draw', text(device.power_w, ' W'))
       ].join('');
     }
 
@@ -355,7 +354,7 @@ HTML = """<!doctype html>
     }
 
     refresh();
-    setInterval(refresh, 3000);
+    setInterval(refresh, 1000);
   </script>
 </body>
 </html>
