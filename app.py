@@ -288,6 +288,14 @@ HTML = """<!doctype html>
     <section class="grid" id="devices"></section>
   </main>
   <script>
+    const devices = [
+      { id: 'wiz-light', name: 'WiZ light', kind: 'light', pollMs: 7000, offsetMs: 1500 },
+      { id: 'xiaomi-plug', name: 'Xiaomi Smart Plug 2', kind: 'plug', pollMs: 3000, offsetMs: 0 }
+    ];
+    const stateById = Object.fromEntries(devices.map((device) => [
+      device.id,
+      { ...device, online: false, error: 'Loading' }
+    ]));
     const root = document.getElementById('devices');
     const updated = document.getElementById('updated');
 
@@ -314,8 +322,14 @@ HTML = """<!doctype html>
       ].join('');
     }
 
-    function render(devices) {
-      root.innerHTML = devices.map((device) => {
+    function apiPath(path) {
+      const basePath = window.location.pathname.replace(/\\/$/, '');
+      return basePath && basePath !== '/' ? `${basePath}${path}` : path;
+    }
+
+    function render() {
+      root.innerHTML = devices.map(({ id }) => {
+        const device = stateById[id];
         const status = !device.online ? 'offline' : device.on ? 'on' : 'off';
         const metrics = metricsFor(device);
         return `
@@ -335,26 +349,31 @@ HTML = """<!doctype html>
       updated.textContent = `Updated ${new Date().toLocaleTimeString()}`;
     }
 
-    async function refresh() {
+    async function refreshDevice(id) {
       try {
-        const basePath = window.location.pathname.replace(/\\/$/, '');
-        const apiPath = basePath && basePath !== '/' ? `${basePath}/api/state` : '/api/state';
-        const response = await fetch(apiPath, { cache: 'no-store' });
-        render((await response.json()).devices || []);
+        const response = await fetch(apiPath(`/api/device/${id}/state`), { cache: 'no-store' });
+        stateById[id] = await response.json();
       } catch (error) {
-        updated.textContent = error.message;
+        stateById[id] = { ...stateById[id], online: false, error: error.message };
       }
+      render();
+    }
+
+    function scheduleDevice(device) {
+      async function loop() {
+        await refreshDevice(device.id);
+        window.setTimeout(loop, device.pollMs);
+      }
+      window.setTimeout(loop, device.offsetMs);
     }
 
     async function act(id, action) {
-      const basePath = window.location.pathname.replace(/\\/$/, '');
-      const apiPath = basePath && basePath !== '/' ? `${basePath}/api/device/${id}/${action}` : `/api/device/${id}/${action}`;
-      await fetch(apiPath, { method: 'POST', cache: 'no-store' });
-      await refresh();
+      await fetch(apiPath(`/api/device/${id}/${action}`), { method: 'POST', cache: 'no-store' });
+      await refreshDevice(id);
     }
 
-    refresh();
-    setInterval(refresh, 1000);
+    render();
+    devices.forEach(scheduleDevice);
   </script>
 </body>
 </html>

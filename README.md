@@ -13,6 +13,13 @@ https://kaanaldemir.com/devices
 
 The container stays idle until the page is opened. There is no database, scheduler, or background polling loop.
 
+When the page is open, it polls devices separately instead of in one burst:
+
+- Xiaomi plug: every 3 seconds
+- WiZ light: every 7 seconds, offset from the plug polling
+
+The WiZ local UDP API can become flaky if it is polled too aggressively, so the bulb is intentionally queried more gently than the plug.
+
 ## Install On ZimaOS
 
 Use the compose YAML in this repo as the app package:
