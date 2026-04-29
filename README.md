@@ -80,11 +80,9 @@ GET  /devices/api/state
 GET  /devices/api/device/wiz-light/state
 POST /devices/api/device/wiz-light/on
 POST /devices/api/device/wiz-light/off
-POST /devices/api/device/wiz-light/toggle
 GET  /devices/api/device/xiaomi-plug/state
 POST /devices/api/device/xiaomi-plug/on
 POST /devices/api/device/xiaomi-plug/off
-POST /devices/api/device/xiaomi-plug/toggle
 ```
 
 Direct `/api/...` endpoints also work on port `8099`.
@@ -115,15 +113,14 @@ Power state:
 siid=2, piid=1
 ```
 
-Energy and power draw:
+Power draw:
 
 ```text
-energy_kwh: siid=11, piid=1
-power_w:    siid=11, piid=2
+power_w: siid=11, piid=2
 ```
 
 Override if needed:
 
 ```yaml
-XIAOMI_POWER_PROPS: '[["energy_kwh",11,1],["power_w",11,2]]'
+XIAOMI_POWER_PROPS: '[["power_w",11,2]]'
 ```

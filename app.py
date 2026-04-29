@@ -30,7 +30,7 @@ XIAOMI_SWITCH_PIID = int(os.environ.get("XIAOMI_SWITCH_PIID", "1"))
 XIAOMI_POWER_PROPS = json.loads(
     os.environ.get(
         "XIAOMI_POWER_PROPS",
-        '[["energy_kwh",11,1],["power_w",11,2]]',
+        '[["power_w",11,2]]',
     )
 )
 
@@ -90,13 +90,12 @@ def wiz_state():
         "on": is_on,
         "brightness": result.get("dimming") if is_on else 0,
         "power_w": None,
-        "raw": result,
     }
 
 
 def wiz_set(enabled):
-    result = wiz_request("setPilot", {"state": bool(enabled)})
-    return {"ok": True, "device": "wiz-light", "on": bool(enabled), "raw": result}
+    wiz_request("setPilot", {"state": bool(enabled)})
+    return {"ok": True, "device": "wiz-light", "on": bool(enabled)}
 
 
 def require_xiaomi_token():
@@ -129,9 +128,7 @@ def xiaomi_state():
             **DEVICES["xiaomi-plug"],
             "online": True,
             "on": bool(values and values[0] in (True, "on")),
-            "temperature_c": values[1] if isinstance(values, list) and len(values) > 1 else None,
             "power_w": None,
-            "raw": values,
         }
 
     raw, props = xiaomi_miot_props(dev)
@@ -140,23 +137,19 @@ def xiaomi_state():
         "online": True,
         "on": bool(props.get("switch")),
         "power_w": props.get("power_w"),
-        "current_a": props.get("current_a"),
-        "voltage_v": props.get("voltage_v"),
-        "energy_kwh": props.get("energy_kwh"),
-        "raw": raw,
     }
 
 
 def xiaomi_set(enabled):
     dev = xiaomi_device()
     if XIAOMI_MODE == "legacy":
-        raw = dev.send("set_power", ["on" if enabled else "off"])
+        dev.send("set_power", ["on" if enabled else "off"])
     else:
-        raw = dev.send(
+        dev.send(
             "set_properties",
             [{"did": "switch", "siid": XIAOMI_SWITCH_SIID, "piid": XIAOMI_SWITCH_PIID, "value": bool(enabled)}],
         )
-    return {"ok": True, "device": "xiaomi-plug", "on": bool(enabled), "raw": raw}
+    return {"ok": True, "device": "xiaomi-plug", "on": bool(enabled)}
 
 
 def state_for(device_id):
@@ -237,10 +230,8 @@ class Handler(BaseHTTPRequestHandler):
                 if action == "state":
                     json_response(self, 200, state_for(parts[2]))
                     return
-                if action in ("on", "off", "toggle"):
+                if action in ("on", "off"):
                     enabled = action == "on"
-                    if action == "toggle":
-                        enabled = not bool(state_for(parts[2]).get("on"))
                     json_response(self, 200, set_device(parts[2], enabled))
                     return
             json_response(self, 404, {"error": "not found"})
@@ -344,7 +335,6 @@ HTML = """<!doctype html>
               <button onclick="act('${device.id}', 'on')" ${device.online ? '' : 'disabled'}>On</button>
               <button onclick="act('${device.id}', 'off')" ${device.online ? '' : 'disabled'}>Off</button>
             </div>
-            ${device.error ? `<div class="error">${device.error}</div>` : ''}
           </article>`;
       }).join('');
       updated.textContent = `Updated ${new Date().toLocaleTimeString()}`;
