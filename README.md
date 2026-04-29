@@ -16,7 +16,7 @@ The container stays idle until the page is opened. There is no database, schedul
 When the page is open, it polls devices separately instead of in one burst:
 
 - Xiaomi plug: every 3 seconds
-- WiZ light: every 7 seconds, offset from the plug polling
+- WiZ light: every 15 seconds, offset from the plug polling
 
 The WiZ local UDP API can become flaky if it is polled too aggressively, so the bulb is intentionally queried more gently than the plug.
 

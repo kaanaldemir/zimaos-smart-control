@@ -281,7 +281,7 @@ HTML = """<!doctype html>
   </main>
   <script>
     const devices = [
-      { id: 'wiz-light', name: 'WiZ light', kind: 'light', pollMs: 7000, offsetMs: 1500 },
+      { id: 'wiz-light', name: 'WiZ light', kind: 'light', pollMs: 15000, offsetMs: 1500 },
       { id: 'xiaomi-plug', name: 'Xiaomi Smart Plug 2', kind: 'plug', pollMs: 3000, offsetMs: 0 }
     ];
     const stateById = Object.fromEntries(devices.map((device) => [
