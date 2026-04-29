@@ -272,7 +272,7 @@ HTML = """<!doctype html>
     .metric { border: 1px solid #27313b; border-radius: 6px; padding: 10px; min-height: 62px; }
     .label { display: block; color: #9aa6b2; font-size: 12px; margin-bottom: 5px; }
     .value { font-size: 18px; font-weight: 620; }
-    .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
     button { height: 42px; border: 1px solid #3a4651; border-radius: 7px; background: #222b33; color: inherit; font: inherit; cursor: pointer; }
     button:hover { background: #2d3842; }
     button:disabled { opacity: .45; cursor: default; }
@@ -300,15 +300,25 @@ HTML = """<!doctype html>
       return `<div class="metric"><span class="label">${label}</span><span class="value">${value}</span></div>`;
     }
 
+    function metricsFor(device) {
+      const state = metric('State', device.online ? (device.on ? 'On' : 'Off') : 'Offline');
+      if (device.kind === 'light') {
+        return [
+          state,
+          metric('Brightness', text(device.brightness, '%'))
+        ].join('');
+      }
+      return [
+        state,
+        metric('Power Draw', text(device.power_w, ' W')),
+        metric('Energy', text(device.energy_kwh, ' kWh'))
+      ].join('');
+    }
+
     function render(devices) {
       root.innerHTML = devices.map((device) => {
         const status = !device.online ? 'offline' : device.on ? 'on' : 'off';
-        const metrics = [
-          metric('State', device.online ? (device.on ? 'On' : 'Off') : 'Offline'),
-          metric('Power', text(device.power_w, ' W')),
-          metric('Brightness', text(device.brightness, '%')),
-          metric('Voltage', text(device.voltage_v, ' V'))
-        ].join('');
+        const metrics = metricsFor(device);
         return `
           <article class="device">
             <div class="top">
@@ -319,7 +329,6 @@ HTML = """<!doctype html>
             <div class="actions">
               <button onclick="act('${device.id}', 'on')" ${device.online ? '' : 'disabled'}>On</button>
               <button onclick="act('${device.id}', 'off')" ${device.online ? '' : 'disabled'}>Off</button>
-              <button onclick="act('${device.id}', 'toggle')" ${device.online ? '' : 'disabled'}>Toggle</button>
             </div>
             ${device.error ? `<div class="error">${device.error}</div>` : ''}
           </article>`;
