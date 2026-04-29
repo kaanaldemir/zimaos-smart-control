@@ -1,0 +1,35 @@
+services:
+  smart-control:
+    image: ghcr.io/kaanaldemir/zimaos-smart-control:latest
+    container_name: smart-control
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PORT: "8099"
+      BASE_PATH: "/devices"
+      API_BASE_PATH: "/devices-api"
+      WIZ_LIGHT_IP: "192.168.1.149"
+      XIAOMI_PLUG_IP: "192.168.1.207"
+      XIAOMI_MODE: "miot"
+      XIAOMI_TIMEOUT: "2"
+      UI_USERNAME: "${UI_USERNAME}"
+      UI_PASSWORD: "${UI_PASSWORD}"
+      # Server-side only. It is not rendered into the web page.
+      XIAOMI_TOKEN: "${XIAOMI_TOKEN}"
+
+x-casaos:
+  architectures:
+    - amd64
+  main: smart-control
+  category: Smart Home
+  developer: kaanaldemir
+  author: kaanaldemir
+  tagline:
+    en_us: Lightweight WiZ and Xiaomi plug control
+  description:
+    en_us: A tiny local web UI for controlling a WiZ light and Xiaomi Smart Plug 2 without Home Assistant.
+  title:
+    en_us: Smart Control
+  port_map: "8099"
+  scheme: http
+  index: /devices
