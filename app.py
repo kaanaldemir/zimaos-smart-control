@@ -251,7 +251,7 @@ HTML = """<!doctype html>
     body { margin: 0; min-height: 100vh; background: #0f1216; }
     main { width: min(900px, calc(100vw - 28px)); margin: 0 auto; padding: 28px 0; }
     header { display: flex; justify-content: space-between; gap: 16px; align-items: end; margin-bottom: 18px; }
-    h1 { font-size: 24px; line-height: 1.2; margin: 0; letter-spacing: 0; }
+    h1 { font-size: 24px; line-height: 1.2; margin: 0; letter-spacing: 0; cursor: pointer; user-select: none; }
     #updated { color: #9aa6b2; font-size: 13px; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
     .device { border: 1px solid #2b3641; border-radius: 8px; background: #171d23; padding: 16px; }
@@ -264,7 +264,7 @@ HTML = """<!doctype html>
     .metric { border: 1px solid #27313b; border-radius: 6px; padding: 10px; min-height: 62px; }
     .label { display: block; color: #9aa6b2; font-size: 12px; margin-bottom: 5px; }
     .value { font-size: 18px; font-weight: 620; }
-    .actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
     button { height: 42px; border: 1px solid #3a4651; border-radius: 7px; background: #222b33; color: inherit; font: inherit; cursor: pointer; }
     button:hover { background: #2d3842; }
     button:disabled { opacity: .45; cursor: default; }
@@ -274,7 +274,7 @@ HTML = """<!doctype html>
 <body>
   <main>
     <header>
-      <h1>Smart Control</h1>
+      <h1 id="title">Smart Control</h1>
       <div id="updated">Loading</div>
     </header>
     <section class="grid" id="devices"></section>
@@ -289,7 +289,10 @@ HTML = """<!doctype html>
       { ...device, online: false, error: 'Loading' }
     ]));
     const root = document.getElementById('devices');
+    const title = document.getElementById('title');
     const updated = document.getElementById('updated');
+    const hiddenIds = new Set(JSON.parse(localStorage.getItem('hiddenDevices') || '[]'));
+    let manageMode = false;
 
     function text(value, suffix = '') {
       if (value === null || value === undefined || value === '') return 'n/a';
@@ -319,9 +322,29 @@ HTML = """<!doctype html>
       return basePath && basePath !== '/' ? `${basePath}${path}` : path;
     }
 
+    function isHidden(id) {
+      return hiddenIds.has(id);
+    }
+
+    function saveHiddenDevices() {
+      localStorage.setItem('hiddenDevices', JSON.stringify([...hiddenIds]));
+    }
+
+    function setHidden(id, hidden) {
+      if (hidden) {
+        hiddenIds.add(id);
+      } else {
+        hiddenIds.delete(id);
+      }
+      saveHiddenDevices();
+      render();
+    }
+
     function render() {
-      root.innerHTML = devices.map(({ id }) => {
+      const listedDevices = manageMode ? devices : devices.filter((device) => !isHidden(device.id));
+      root.innerHTML = listedDevices.map(({ id }) => {
         const device = stateById[id];
+        const hidden = isHidden(id);
         const status = !device.online ? 'offline' : device.on ? 'on' : 'off';
         const metrics = metricsFor(device);
         return `
@@ -332,8 +355,9 @@ HTML = """<!doctype html>
             </div>
             <div class="metrics">${metrics}</div>
             <div class="actions">
-              <button onclick="act('${device.id}', 'on')" ${device.online ? '' : 'disabled'}>On</button>
-              <button onclick="act('${device.id}', 'off')" ${device.online ? '' : 'disabled'}>Off</button>
+              ${manageMode ? `<button onclick="setHidden('${device.id}', ${!hidden})">${hidden ? 'Show' : 'Hide'}</button>` : ''}
+              <button onclick="act('${device.id}', 'on')" ${device.online && !hidden ? '' : 'disabled'}>On</button>
+              <button onclick="act('${device.id}', 'off')" ${device.online && !hidden ? '' : 'disabled'}>Off</button>
             </div>
           </article>`;
       }).join('');
@@ -341,6 +365,9 @@ HTML = """<!doctype html>
     }
 
     async function refreshDevice(id) {
+      if (isHidden(id)) {
+        return;
+      }
       try {
         const response = await fetch(apiPath(`/api/device/${id}/state`), { cache: 'no-store' });
         if (!response.ok) {
@@ -367,6 +394,11 @@ HTML = """<!doctype html>
       await fetch(apiPath(`/api/device/${id}/${action}`), { method: 'POST', cache: 'no-store' });
       await refreshDevice(id);
     }
+
+    title.addEventListener('click', () => {
+      manageMode = !manageMode;
+      render();
+    });
 
     render();
     devices.forEach(scheduleDevice);
